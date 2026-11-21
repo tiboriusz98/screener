@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Screener Saham MA</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2850c8">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f6f9;--sf:#fff;--tx:#151a22;--mt:#5b6575;--ln:#dfe4ea;--ac:#2850c8;--c1:#c42f2f;--c2:#d4602a;--c3:#a97b05;--c4:#1c8548;--c5:#2970c4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141a;--sf:#1a2029;--tx:#e8ecf2;--mt:#97a2b3;--ln:#2a3340;--ac:#7c9cff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10141a;--sf:#1a2029;--tx:#e8ecf2;--mt:#97a2b3;--ln:#2a3340;--ac:#7c9cff;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 18%,var(--bg)),var(--bg) 240px) no-repeat var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:76px}
+main{max-width:640px;margin:0 auto;padding:14px 12px}
+h1{font-size:19px;margin:0 0 10px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sf);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mt);padding:13px 4px;font:inherit;font-weight:600}
+nav button.on{color:var(--ac);box-shadow:inset 0 2px 0 var(--ac)}
+.card,.tile{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px;margin:0 0 8px}
+.card{display:flex;align-items:center;gap:12px;cursor:pointer;border-left-width:5px}
+.card .t{flex:1}.card small,.s,.g,.mt{color:var(--mt)}
+.card .n{min-width:46px;height:46px;border-radius:14px;color:#fff;display:grid;place-items:center;font-size:19px;font-weight:700}
+.nw{font-style:normal;font-size:12px;color:var(--ac);font-weight:600}
+.card,.tile{border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}.tile{border-left:4px solid var(--ln)}
+.top{display:flex;align-items:center;gap:10px}.mid{flex:1;min-width:0}.mid b{font-size:16px}.mid .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:15px}
+.av{position:relative;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;overflow:hidden;flex:none}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:3px}
+h1{font-size:22px;letter-spacing:-.3px}
+.r{display:flex;justify-content:space-between;font-size:16px}.s,.g{font-size:12.5px}
+.g{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap}
+.pl{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pl i{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:10px;background:color-mix(in srgb,var(--ac) 14%,transparent);color:var(--ac)}
+.tabs{display:flex;gap:6px;margin:0 0 10px;overflow-x:auto}
+.tabs button{white-space:nowrap;border:1px solid var(--ln);background:var(--sf);color:var(--tx);border-radius:16px;padding:6px 12px;font:inherit;font-size:13px}
+.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn{display:block;width:100%;border:0;border-radius:10px;padding:13px;font:inherit;font-weight:700;background:var(--ac);color:#fff;margin:8px 0;text-align:center}
+.btn.o{background:none;border:1px solid var(--ln);color:var(--tx)}
+.bar{height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:8px 0}.bar b{display:block;height:100%;background:var(--ac)}
+.back{border:0;background:none;color:var(--ac);font:inherit;padding:0 0 8px;font-weight:600}
+.err{color:#c42f2f;font-size:13px}
+</style></head><body>
+<main id="v"></main>
+<nav><button id="n0" onclick="go('scr')">Screener</button><button id="n1" onclick="go('new')">Baru Masuk</button><button id="n2" onclick="go('dat')">Data</button></nav>
+<script>
+const CATS=[
+{k:1,n:"UNDER ALL MA",r:"Di bawah MA 112, 224, dan 300",c:"--c1"},
+{k:2,n:"UNDER 112",r:"Di bawah MA 112 dan 224, di atas MA 300",c:"--c2"},
+{k:3,n:"POTENSI RICE BOWL",r:"Di bawah MA 224, di atas MA 112",c:"--c3"},
+{k:4,n:"UPTREND RICE BOWL",r:"Di atas MA 112, 224, dan 300",c:"--c4"},
+{k:5,n:"RANGING UPTREND",r:"Di atas MA 224 dan 300, di bawah MA 112",c:"--c5"}];
+const REC=3,MIN=300+REC,KEEP=450;
+const cls=(c,a,b,d)=>c<a&&c<b&&c<d?1:c<a&&c<b&&c>d?2:c<b&&c>a?3:c>a&&c>b&&c>d?4:c>b&&c>d&&c<a?5:0;
+/* ---------- CSV ---------- */
+function parseCsv(t){if(t.charCodeAt(0)===65279)t=t.slice(1);
+const ls=t.split("\n").filter(l=>l.trim()).slice(0,5);let D=",",best=0;
+for(const d of [",",";","\t"]){let n=0;for(const l of ls)n+=l.split(d).length-1;if(n>best){best=n;D=d}}
+const rows=[];let row=[],s="",q=false;
+const end=()=>{row.push(s);s="";if(row.some(c=>c.trim()))rows.push(row);row=[]};
+for(let i=0;i<t.length;i++){const ch=t[i];
+if(q){if(ch==='"'){if(t[i+1]==='"'){s+='"';i++}else q=false}else s+=ch}
+else if(ch==='"')q=true;else if(ch===D){row.push(s);s=""}
+else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;end()}else s+=ch}
+if(s||row.length)end();return rows}
+function num(r){let s=String(r).trim().replace(/\s/g,"");if(!s||s==="-")return null;
+const d=s.lastIndexOf("."),c=s.lastIndexOf(",");
+if(d>=0&&c>=0)s=c>d?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");
+else if(c>=0){const p=s.split(",");s=p.length===2&&p[1].length!==3?p[0]+"."+p[1]:s.replace(/,/g,"")}
+else if(d>=0){const p=s.split(".");if(p.length>2||(p.length===2&&p[1].length===3))s=s.replace(/\./g,"")}
+const v=parseFloat(s);return isNaN(v)?null:v}
+const MO={jan:1,feb:2,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,agu:8,aug:8,ags:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
+function vd(y,m,d){if(y<2000||y>2100||m<1||m>12||d<1||d>31)return 0;return new Date(y,m-1,d).getMonth()===m-1?y*1e4+m*100+d:0}
+function pdate(s){s=String(s).trim();let m;
+if(m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))return vd(+m[1],+m[2],+m[3]);
+if(m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/))return vd(+m[3],+m[2],+m[1]);
+if(m=s.match(/^(\d{1,2})[\s\-\/]([A-Za-z]{3,9})[\s\-\/,]*(\d{4})/)){const o=MO[m[2].slice(0,3).toLowerCase()];if(o)return vd(+m[3],o,+m[1])}return 0}
+function fdate(n){const s=n.replace(/\.[^.]*$/,"");let m=s.match(/(\d{4})[-_.]?(\d{2})[-_.]?(\d{2})/),v=m?vd(+m[1],+m[2],+m[3]):0;if(v)return v;m=s.match(/(\d{2})[-_.](\d{2})[-_.](\d{4})/);return m?vd(+m[3],+m[2],+m[1]):0}
+function ftick(n){const m=n.replace(/\.[^.]*$/,"").match(/^([A-Za-z]{4})(?:\.jk)?(?:[_\- ].*)?$/i);return m?m[1].toUpperCase():null}
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function extract(name,text){const R=parseCsv(text);if(!R.length)return{e:"File kosong."};
+let h=-1,H,cc;
+for(let r=0;r<Math.min(15,R.length);r++){const c=R[r].map(norm);const i=["penutupan","close","close price","harga penutupan","closing price"].map(x=>c.indexOf(x)).find(x=>x>=0);if(i!==undefined){h=r;H=c;cc=i;break}}
+if(h<0)return{e:"Kolom Penutupan atau Close tidak ditemukan."};
+const f=(ex,ct)=>{for(const x of ex){const i=H.indexOf(x);if(i>=0)return i}if(ct)for(let i=0;i<H.length;i++)if(ct.some(k=>H[i].includes(k)))return i;return -1};
+const tc=f(["kode saham","kode","code","ticker","symbol","stock code","kode emiten"],["kode saham","ticker","symbol"]),nc=f(["nama perusahaan","nama emiten","company name","nama","name"]),dc=f(["date","tanggal","tgl","tanggal perdagangan"]);
+const fd=fdate(name),ft=ftick(name);
+if(dc<0&&!fd)return{e:"Tanggal tidak ada. Beri nama file seperti 20261120.csv."};
+if(tc<0&&!ft)return{e:"Kolom kode saham tidak ada dan nama file bukan kode saham."};
+const out=[];
+for(let r=h+1;r<R.length;r++){const x=R[r],c=num(x[cc]??"");if(!c||c<=0)continue;
+const t=tc>=0?(x[tc]||"").trim().toUpperCase().replace(".JK",""):ft;if(!/^[A-Z0-9\-]{2,8}$/.test(t))continue;
+const d=dc>=0?pdate(x[dc]||""):fd;if(!d)continue;out.push([t,nc>=0&&x[nc]?x[nc].trim():"",d,c])}
+return out.length?{rows:out}:{e:"Tidak ada baris data yang valid."}}
+/* ---------- Penyimpanan (IndexedDB) ---------- */
+let DB={};
+function addRows(rows){const T=new Set;for(const[t,n,d,c]of rows){const o=DB[t]||(DB[t]={n:t,m:new Map});o.m.set(d,c);if(n)o.n=n;T.add(t)}
+for(const t of T){const m=DB[t].m;if(m.size>KEEP+50){const k=[...m.keys()].sort((a,b)=>a-b);for(const x of k.slice(0,m.size-KEEP))m.delete(x)}}}
+const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open("scr",1);q.onupgradeneeded=()=>q.result.createObjectStore("kv");q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+async function kv(op,val){try{const db=await idb();return await new Promise((res,rej)=>{const tx=db.transaction("kv","readwrite"),s=tx.objectStore("kv");const r=op==="get"?s.get("db"):op==="set"?s.put(val,"db"):s.delete("db");tx.oncomplete=()=>res(r.result);tx.onerror=()=>rej(tx.error)})}catch(e){return undefined}}
+const ser=()=>{const o={};for(const t in DB){const k=[...DB[t].m.keys()].sort((a,b)=>a-b);o[t]={n:DB[t].n,k,c:k.map(x=>DB[t].m.get(x))}}return o};
+async function load(){const o=await kv("get");DB={};if(o)for(const t in o)DB[t]={n:o[t].n,m:new Map(o[t].k.map((x,i)=>[x,o[t].c[i]]))}}
+const dt=k=>new Date(Math.floor(k/1e4),Math.floor(k/100)%100-1,k%100);
+const fmtD=k=>k?dt(k).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}):"-";
+function stats(){const D=new Set;for(const t in DB)for(const k of DB[t].m.keys())D.add(k);const a=[...D].sort((x,y)=>x-y);return{s:Object.keys(DB).length,d:a.length,f:a[0],l:a[a.length-1]}}
+/* ---------- Screening ---------- */
+function run(){const R={all:{},fresh:{},skip:0,stale:0,total:0};for(const c of CATS){R.all[c.k]=[];R.fresh[c.k]=[]}
+const st=stats(),nd=st.l?dt(st.l):null;
+for(const t in DB){const o=DB[t],k=[...o.m.keys()].sort((a,b)=>a-b),n=k.length;R.total++;
+if(nd&&(nd-dt(k[n-1]))/864e5>10){R.stale++;continue}
+if(n<MIN){R.skip++;continue}
+const cl=k.map(x=>o.m.get(x)),P=[0];for(const v of cl)P.push(P[P.length-1]+v);
+const ma=(i,p)=>(P[i+1]-P[i+1-p])/p,at=i=>cls(cl[i],ma(i,112),ma(i,224),ma(i,300));
+const c0=at(n-1);if(!c0)continue;
+const it={t,n:o.n,cat:c0,sp:cl.slice(-90),c:cl[n-1],g:[112,224,300].map(p=>(cl[n-1]/ma(n-1,p)-1)*100)};
+R.all[c0].push(it);let s=1;while(s<=REC&&at(n-1-s)===c0)s++;
+if(s<=REC)R.fresh[c0].push({...it,ago:s-1,from:at(n-1-s)})}
+const by=(a,b)=>a.t<b.t?-1:1;for(const c of CATS){R.all[c.k].sort(by);R.fresh[c.k].sort((a,b)=>a.ago-b.ago||by(a,b))}
+return R}
+/* ---------- UI ---------- */
+const S={v:"scr",cat:null,tab:"new",chip:0,rep:null,log:null};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fp=n=>Math.round(n).toLocaleString("id-ID"),pc=v=>(v>=0?"+":"")+v.toFixed(1)+"%";
+const $=document.getElementById("v");
+const hue=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return h};
+const av=t=>`<div class="av" style="background:hsl(${hue(t)} 52% 42%)"><span>${esc(t.slice(0,2))}</span><img src="logos/${esc(t)}.png" alt="" onerror="this.remove()"></div>`;
+const spark=(a,c)=>{const mn=Math.min(...a),mx=Math.max(...a),w=96,h=32;const p=a.map((v,i)=>(i/(a.length-1)*w).toFixed(1)+","+(h-2-(v-mn)/(mx-mn||1)*(h-4)).toFixed(1)).join(" ");return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${p}" fill="none" stroke="var(${c})" stroke-width="1.8" stroke-linejoin="round"/></svg>`};
+function tile(x,showCat){const k=CATS[x.cat-1];return `<div class="tile" style="border-left-color:var(${k.c})"><div class="top">${av(x.t)}<div class="mid"><b>${esc(x.t)}</b><div class="s">${esc(x.n)}</div></div><div class="rt">${spark(x.sp,k.c)}<b>${fp(x.c)}</b></div></div><div class="g"><span>MA112 ${pc(x.g[0])}</span><span>MA224 ${pc(x.g[1])}</span><span>MA300 ${pc(x.g[2])}</span></div>`+
+(x.ago!==undefined?`<div class="pl"><i>${x.ago?x.ago+" hari lalu":"Masuk hari ini"}</i><i>dari: ${x.from?CATS[x.from-1].n:"di luar kategori"}</i>${showCat?`<i>${k.n}</i>`:""}</div>`:"")+`</div>`}
+const list=(a,m,sc)=>a.length?a.map(x=>tile(x,sc)).join(""):`<p class="mt">${m}</p>`;
+const empty=()=>`<div class="card" style="border-left-width:1px;flex-direction:column;text-align:center"><p>Belum ada data harga.<br>Buka tab Data lalu impor file CSV (minimal ${MIN} hari bursa).</p><button class="btn" onclick="go('dat')">Buka Data</button></div>`;
+function paint(){["scr","new","dat"].forEach((k,i)=>document.getElementById("n"+i).className=S.v===k?"on":"");
+const R=S.rep;let h="";
+if(S.v==="scr"){
+ if(!R||!R.total)h="<h1>Screener Saham</h1>"+empty();
+ else if(S.cat){const c=CATS[S.cat-1],a=R.all[S.cat],f=R.fresh[S.cat];
+  h=`<button class="back" onclick="S.cat=null;paint()">‹ Kembali</button><h1>${c.n}</h1><p class="mt">${c.r}</p><div class="tabs"><button class="${S.tab==="new"?"on":""}" onclick="S.tab='new';paint()">Baru masuk (${REC} hari) ${f.length}</button><button class="${S.tab==="all"?"on":""}" onclick="S.tab='all';paint()">Semua ${a.length}</button></div>`+(S.tab==="new"?list(f,"Belum ada saham baru masuk dalam "+REC+" hari terakhir."):list(a,"Tidak ada saham di kategori ini."))}
+ else h=`<h1>Screener Saham</h1>`+CATS.map(c=>`<div class="card" style="border-left-color:var(${c.c})" onclick="S.cat=${c.k};paint()"><div class="t"><b>${c.n}</b><br><small>${c.r}</small>${R.fresh[c.k].length?`<br><span class="nw">${R.fresh[c.k].length} baru masuk</span>`:""}</div><div class="n" style="background:var(${c.c})">${R.all[c.k].length}</div></div>`).join("")+(R.skip||R.stale?`<p class="mt">${R.skip} saham dilewati (data kurang dari ${MIN} hari), ${R.stale} disembunyikan karena tidak aktif.</p>`:"")}
+else if(S.v==="new"){
+ if(!R||!R.total)h="<h1>Baru Masuk</h1>"+empty();
+ else{const ks=S.chip?[S.chip]:CATS.map(c=>c.k);let a=[];for(const k of ks)for(const x of R.fresh[k])a.push({...x,cat:k});a.sort((p,q)=>p.ago-q.ago||(p.t<q.t?-1:1));
+  h=`<h1>Baru masuk, ${REC} hari terakhir</h1><div class="tabs"><button class="${S.chip?"":"on"}" onclick="S.chip=0;paint()">Semua</button>${CATS.map(c=>`<button class="${S.chip===c.k?"on":""}" onclick="S.chip=${c.k};paint()">${c.n} ${R.fresh[c.k].length}</button>`).join("")}</div>`+list(a,"Belum ada saham baru masuk.",1)}}
+else{const s=stats(),p=Math.min(100,s.d/MIN*100);
+ h=`<h1>Data CSV</h1><div class="card" style="display:block;cursor:default"><b>${s.s} saham, ${s.d} hari bursa</b><br><small>Rentang: ${fmtD(s.f)} sampai ${fmtD(s.l)}</small><div class="bar"><b style="width:${p}%"></b></div><small>${s.d>=MIN?"Cukup untuk menghitung MA 300.":"Butuh minimal "+MIN+" hari bursa, kurang "+(MIN-s.d)+" hari."}</small></div>
+ <label class="btn" for="fi">Pilih file CSV (boleh banyak)</label><input id="fi" type="file" multiple hidden onchange="imp(this.files)"><div id="pg" class="mt"></div>
+ <button class="btn o" onclick="exp()">Ekspor semua data ke 1 file CSV</button>
+ <button class="btn o" onclick="clr()">Hapus semua data</button>`+
+ (S.log?`<p><b>Hasil impor terakhir:</b> ${S.log.ok} berhasil, ${S.log.err.length} gagal</p>`+S.log.err.slice(0,40).map(e=>`<p class="err"><b>${esc(e[0])}</b><br>${esc(e[1])}</p>`).join(""):"")+
+ `<p class="mt" style="font-size:12.5px">Format yang dikenali: file per saham (mis. BBCA.csv dengan kolom Date dan Close, seperti dataset Kaggle folder stocks/csv) atau file harian semua saham dengan kolom Kode Saham dan Penutupan, tanggal diambil dari nama file (20261120.csv). Data disimpan di browser ini; untuk cadangan atau pindah perangkat, ekspor ke 1 file CSV lalu impor kembali lewat tombol Pilih file CSV. Logo saham: taruh gambar bernama KODE.png (mis. BBCA.png) di folder logos pada repositori; yang tidak ada tampil sebagai inisial berwarna. Hanya ${KEEP} hari terbaru per saham yang disimpan, dan saham tidak aktif lebih dari 10 hari disembunyikan.</p>`}
+$.innerHTML=h}
+function go(v){S.v=v;S.cat=null;paint();scrollTo(0,0)}
+async function imp(fl){const F=[...fl];if(!F.length)return;const err=[];let ok=0;const pg=document.getElementById("pg");
+for(let i=0;i<F.length;i++){const f=F[i];pg.textContent="Mengimpor "+(i+1)+" dari "+F.length+"…";
+if(!/\.(csv|txt)$/i.test(f.name)){err.push([f.name,"Bukan CSV (file XLSX perlu disimpan sebagai CSV)."]);continue}
+try{const r=extract(f.name,await f.text());if(r.e)err.push([f.name,r.e]);else{addRows(r.rows);ok++}}catch(e){err.push([f.name,"File tidak bisa dibaca."])}
+if(i%4===3)await new Promise(r=>setTimeout(r))}
+pg.textContent="Menyimpan…";await kv("set",ser());S.log={ok,err};S.rep=run();paint()}
+async function exp(){const L=["Ticker,Name,Date,Close"];
+for(const t in DB){const o=DB[t],n='"'+o.n.replace(/"/g,'""')+'"';for(const k of [...o.m.keys()].sort((a,b)=>a-b)){const d=String(k);L.push(t+","+n+","+d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6)+","+o.m.get(k))}}
+if(L.length<2){alert("Belum ada data untuk diekspor.");return}
+const f=new File([L.join("\n")],"data-screener.csv",{type:"text/csv"});
+try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"Data Screener Saham"});return}}catch(e){if(e.name==="AbortError")return}
+const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove()}
+async function clr(){if(!confirm("Hapus semua data harga dari browser ini?"))return;DB={};await kv("del");S.log=null;S.rep=run();paint()}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+(async()=>{await load();S.rep=run();paint()})();
+</script></body></html>
